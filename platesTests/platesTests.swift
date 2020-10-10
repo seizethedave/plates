@@ -6,6 +6,7 @@
 //
 
 import XCTest
+
 @testable import plates
 
 class platesTests: XCTestCase {
@@ -18,16 +19,13 @@ class platesTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+    func testTranslate() {
+        XCTAssertEqual(translate("alpha beta 1 2 3"), "ab123")
+        XCTAssertEqual(translate("alpha beta 123"), "ab123")
+        XCTAssertEqual(translate("alpha 123 beta charlie"), "a123bc")
+        XCTAssertEqual(translate("alpha yankee 123 beta charlie"), "ay123bc")
+        
+        XCTAssertEqual(translate("1 11 111"), "111111")
     }
 
 }

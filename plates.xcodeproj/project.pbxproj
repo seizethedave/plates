@@ -15,6 +15,8 @@
 		446569E425311CCC00BAAB79 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 446569E225311CCC00BAAB79 /* LaunchScreen.storyboard */; };
 		446569EF25311CCC00BAAB79 /* platesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446569EE25311CCC00BAAB79 /* platesTests.swift */; };
 		446569FA25311CCC00BAAB79 /* platesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446569F925311CCC00BAAB79 /* platesUITests.swift */; };
+		44656A0E2532577500BAAB79 /* plates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44656A0D2532577500BAAB79 /* plates.swift */; };
+		44656A0F2532577500BAAB79 /* plates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44656A0D2532577500BAAB79 /* plates.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +51,7 @@
 		446569F525311CCC00BAAB79 /* platesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = platesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		446569F925311CCC00BAAB79 /* platesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = platesUITests.swift; sourceTree = "<group>"; };
 		446569FB25311CCC00BAAB79 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		44656A0D2532577500BAAB79 /* plates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = plates.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +109,7 @@
 				446569E025311CCC00BAAB79 /* Assets.xcassets */,
 				446569E225311CCC00BAAB79 /* LaunchScreen.storyboard */,
 				446569E525311CCC00BAAB79 /* Info.plist */,
+				44656A0D2532577500BAAB79 /* plates.swift */,
 			);
 			path = plates;
 			sourceTree = "<group>";
@@ -258,6 +262,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				44656A0E2532577500BAAB79 /* plates.swift in Sources */,
 				446569DC25311CCB00BAAB79 /* ViewController.swift in Sources */,
 				446569D825311CCB00BAAB79 /* AppDelegate.swift in Sources */,
 				446569DA25311CCB00BAAB79 /* SceneDelegate.swift in Sources */,
@@ -268,6 +273,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				44656A0F2532577500BAAB79 /* plates.swift in Sources */,
 				446569EF25311CCC00BAAB79 /* platesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
