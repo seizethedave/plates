@@ -7,22 +7,86 @@
 
 import Foundation
 
-enum Token {
-    case Atom
+enum TokenType {
+    case PlateNumber
     case State
-    
+
+    case MetaAdd
     case MetaCorrection
     case MetaNext
     case MetaDone
 }
 
-struct Command {
-    
-    
+
+
+struct Token : Equatable {
+    var type: TokenType
+    var value: String?
 }
 
-func tokenize(input: String) -> [Command] {
-    return []
+struct Command {
+    var plate: String
+}
+
+/*
+ Grammar:
+ [Command] Atom* [State] [Terminator]
+ ->
+ [
+ Command(CommandType, Atom*, State),
+ Command(CommandType, Atom*, State),
+ ...
+ ]
+*/
+
+/*
+ input:
+ alpha beta 1 2 3
+ output:
+ [
+ ]
+ */
+func tokenize(_ input: String) -> [Token] {
+    var tokens = [Token]()
+    var plateBuf = ""
+    var expectState = false
+    
+    func flushPlate() {
+        if !plateBuf.isEmpty {
+            // dangling plate at end of input without terminal token.
+            tokens.append(Token(type: TokenType.PlateNumber, value: plateBuf))
+            plateBuf = ""
+        }
+    }
+
+    for atom in input.lowercased().split(separator: " ") {
+        if expectState {
+            flushPlate()
+            tokens.append(Token(type: TokenType.State, value: String(atom)))
+            expectState = false
+        } else if atom == "done" {
+            flushPlate()
+            tokens.append(Token(type: TokenType.MetaDone))
+        } else if atom == "next" {
+            flushPlate()
+            tokens.append(Token(type: TokenType.MetaNext))
+        } else if atom == "state" {
+            expectState = true
+        } else if let char = nato[String(atom)] {
+            plateBuf += char
+        } else if let char = numeric[String(atom)] {
+            plateBuf += char
+        } else if atom.allSatisfy({ $0.isNumber }) {
+            // e.g., "128" or "1"
+            plateBuf += atom
+        } else {
+            print("unrecognized atom:", atom)
+        }
+    }
+    
+    flushPlate()
+
+    return tokens
 }
 
 let nato = [
@@ -49,7 +113,7 @@ let nato = [
     "uniform": "u",
     "victor": "v",
     "whiskey": "w",
-    "xray": "x",
+    "x-ray": "x",
     "yankee": "y",
     "zulu": "z",
 ]
@@ -67,7 +131,6 @@ let numeric = [
 ]
 
 func translate(_ input: String) -> String {
-
     var output = ""
 
     for atom in input.lowercased().split(separator: " ") {
@@ -75,13 +138,11 @@ func translate(_ input: String) -> String {
             output += char
         } else if let char = numeric[String(atom)] {
             output += char
-        } else {
+        } else if atom.allSatisfy({ $0.isNumber }) {
             // "128" or "1"
-            for c in atom {
-                if c.isNumber {
-                    output += String(c)
-                }
-            }
+            output += atom
+        } else {
+            print("unrecognized atom:", atom)
         }
     }
 
