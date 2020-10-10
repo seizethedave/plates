@@ -52,15 +52,48 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         recognitionTask = speechRecognizer?.recognitionTask(with: request, resultHandler: { result, error in
 
             if let result = result {
-                print(result.bestTranscription.formattedString)
+                print(self.translate(input: result.bestTranscription.formattedString))
                 
             } else if let error = error {
-                print(error)
+                print("error:", error)
             }
-                    
         })
     }
-    
+
+    func translate(input: String) -> String {
+        let nato = [
+            "alpha": "a",
+            "beta": "b",
+            "charlie": "c",
+            "delta": "d",
+            "echo": "e",
+            "foxtrot": "f",
+        ]
+        let numeric = [
+            "one": "1",
+            "two": "2",
+            "three": "3",
+        ]
+        var output = ""
+
+        for atom in input.lowercased().split(separator: " ") {
+            if let char = nato[String(atom)] {
+                output += char
+            } else if let char = numeric[String(atom)] {
+                output += char
+            } else {
+                // "128" or "1"
+                for c in atom {
+                    if c.isNumber {
+                        output += String(c)
+                    }
+                }
+            }
+        }
+
+        return output
+    }
+
     @IBAction func speakTouched(_ sender: UIButton) {
         recordAndRecognizeSpeech()
     }
