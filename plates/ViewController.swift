@@ -8,6 +8,11 @@
 import UIKit
 import Speech
 
+enum ViewState {
+    case NotListening
+    case Listening
+}
+
 class ViewController: UIViewController, SFSpeechRecognizerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -19,11 +24,33 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         sender.text = ""
     }
     
+    @IBOutlet weak var plateLabel: UILabel!
+    @IBOutlet weak var speakButton: UIButton!
+    
     let audioEngine = AVAudioEngine()
-    let speechRecognizer: SFSpeechRecognizer? = SFSpeechRecognizer()
-    let request = SFSpeechAudioBufferRecognitionRequest()
+    var request : SFSpeechAudioBufferRecognitionRequest? = nil
     var recognitionTask: SFSpeechRecognitionTask?
     var audioInited = false
+    
+    var viewState = ViewState.NotListening {
+        didSet {
+            if (self.viewState == oldValue) {
+                return
+            }
+            DispatchQueue.main.async {
+                switch self.viewState {
+                case ViewState.Listening:
+                    self.speakButton.isSelected = true
+                    self.recordAndRecognizeSpeech()
+                    break
+                case ViewState.NotListening:
+                    self.speakButton.isSelected = false
+                    self.stopListening()
+                    break
+                }
+            }
+        }
+    }
     
     func initAudioStuff() {
         if self.audioInited {
@@ -35,7 +62,9 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         
         node.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat)
         {
-            buffer, _ in self.request.append(buffer)
+            buffer, _ in
+            guard let req = self.request else { return }
+            req.append(buffer)
         }
         
         audioEngine.prepare()
@@ -48,6 +77,45 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         self.audioInited = true
     }
     
+    func displayTokens(_ tokens: [Token]) {
+        assert(tokens.last!.type == TokenType.MetaDone || tokens.last!.type == TokenType.MetaNext)
+        
+        guard let plateToken = tokens.first(where: { $0.type == TokenType.PlateNumber }) else {
+            print("malformed tokens", tokens)
+            return
+        }
+        
+        plateLabel.text = plateToken.value
+    }
+    
+    func gotTaskResult(_ result: SFSpeechRecognitionResult?, _ error: Error?) {
+        
+        if let result = result {
+            print(result.isFinal)
+            let tokens = tokenize(result.bestTranscription.formattedString)
+            
+            if tokens.isEmpty {
+                return
+            }
+            
+            switch (tokens.last!.type) {
+            case TokenType.MetaNext:
+                displayTokens(tokens)
+                self.viewState = ViewState.NotListening
+                self.viewState = ViewState.Listening
+                break
+            case TokenType.MetaDone:
+                displayTokens(tokens)
+                self.viewState = ViewState.NotListening
+                break
+            default:
+                break
+            }
+        } else if let error = error {
+            print("error:", error)
+        }
+    }
+    
     func recordAndRecognizeSpeech() {
         self.initAudioStuff()
         
@@ -57,39 +125,17 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         if !myRecognizer.isAvailable {
             return
         }
+        
+        self.request = SFSpeechAudioBufferRecognitionRequest()
 
-        self.recognitionTask = speechRecognizer?.recognitionTask(with: request, resultHandler: { result, error in
-
-            if let result = result {
-                print(result.isFinal)
-                let tokens = tokenize(result.bestTranscription.formattedString)
-                
-                if tokens.isEmpty {
-                    return
-                }
-                
-                switch (tokens.last!.type) {
-                case TokenType.MetaNext:
-                    print(tokens)
-                    print("(next)")
-                    self.recognitionTask?.finish()
-                    break
-                case TokenType.MetaDone:
-                    print(tokens)
-                    print("(done)")
-                    self.recognitionTask?.finish()
-                    break
-                default:
-                    break
-                }
-                
-            } else if let error = error {
-                print("error:", error)
-            }
-        })
+        self.recognitionTask = myRecognizer.recognitionTask(with: self.request!, resultHandler: self.gotTaskResult)
+    }
+    
+    func stopListening() {
+        self.recognitionTask?.finish()
     }
 
     @IBAction func speakTouched(_ sender: UIButton) {
-        recordAndRecognizeSpeech()
+        self.viewState = self.viewState == ViewState.Listening ? ViewState.NotListening : ViewState.Listening
     }
 }

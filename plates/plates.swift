@@ -131,22 +131,3 @@ let numeric = [
     "eight": "8",
     "nine": "9",
 ]
-
-func translate(_ input: String) -> String {
-    var output = ""
-
-    for atom in input.lowercased().split(separator: " ") {
-        if let char = nato[String(atom)] {
-            output += char
-        } else if let char = numeric[String(atom)] {
-            output += char
-        } else if atom.allSatisfy({ $0.isNumber }) {
-            // "128" or "1"
-            output += atom
-        } else {
-            print("unrecognized atom:", atom)
-        }
-    }
-
-    return output
-}
