@@ -53,7 +53,6 @@ func tokenize(_ input: String) -> [Token] {
     
     func flushPlate() {
         if !plateBuf.isEmpty {
-            // dangling plate at end of input without terminal token.
             tokens.append(Token(type: TokenType.PlateNumber, value: plateBuf))
             plateBuf = ""
         }
@@ -61,7 +60,6 @@ func tokenize(_ input: String) -> [Token] {
 
     for atom in input.lowercased().split(separator: " ") {
         if expectState {
-            flushPlate()
             tokens.append(Token(type: TokenType.State, value: String(atom)))
             expectState = false
         } else if atom == "done" {
@@ -71,11 +69,12 @@ func tokenize(_ input: String) -> [Token] {
             flushPlate()
             tokens.append(Token(type: TokenType.MetaNext))
         } else if atom == "state" {
+            flushPlate()
             expectState = true
-        } else if let char = nato[String(atom)] {
-            plateBuf += char
-        } else if let char = numeric[String(atom)] {
-            plateBuf += char
+        } else if let val = nato[String(atom)] {
+            plateBuf += val
+        } else if let val = numeric[String(atom)] {
+            plateBuf += val
         } else if atom.allSatisfy({ $0.isNumber }) {
             // e.g., "128" or "1"
             plateBuf += atom
@@ -83,7 +82,8 @@ func tokenize(_ input: String) -> [Token] {
             print("unrecognized atom:", atom)
         }
     }
-    
+
+    // dangling plate at end of input without terminal token:
     flushPlate()
 
     return tokens

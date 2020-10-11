@@ -23,7 +23,7 @@ class platesTests: XCTestCase {
         XCTAssertEqual(tokenize("alpha beta 1 2 3"),
                        [Token(type: TokenType.PlateNumber, value: "ab123")])
         XCTAssertEqual(
-            tokenize("alpha 1 done beta 2 done whiskey 9"),
+            tokenize("alpha 1 done beta 2 done"),
             [
                 Token(type: TokenType.PlateNumber, value: "a1"),
                 Token(type: TokenType.MetaDone),
@@ -45,6 +45,19 @@ class platesTests: XCTestCase {
             [
                 Token(type: TokenType.PlateNumber, value: "a1z2"),
                 Token(type: TokenType.State, value: "washington"),
+                Token(type: TokenType.MetaDone),
+            ])
+        
+        XCTAssertEqual(
+            tokenize(
+                "alpha 1 zulu 2 state washington next " +
+                "november alpha charlie 0 9 5 4 done"
+            ),
+            [
+                Token(type: TokenType.PlateNumber, value: "a1z2"),
+                Token(type: TokenType.State, value: "washington"),
+                Token(type: TokenType.MetaNext),
+                Token(type: TokenType.PlateNumber, value: "nac0954"),
                 Token(type: TokenType.MetaDone),
             ])
         
