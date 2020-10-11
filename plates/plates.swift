@@ -65,9 +65,11 @@ func tokenize(_ input: String) -> [Token] {
         } else if atom == "done" {
             flushPlate()
             tokens.append(Token(type: TokenType.MetaDone))
+            break
         } else if atom == "next" {
             flushPlate()
             tokens.append(Token(type: TokenType.MetaNext))
+            break
         } else if atom == "state" {
             flushPlate()
             expectState = true

@@ -23,11 +23,14 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
     let speechRecognizer: SFSpeechRecognizer? = SFSpeechRecognizer()
     let request = SFSpeechAudioBufferRecognitionRequest()
     var recognitionTask: SFSpeechRecognitionTask?
+    var audioInited = false
     
-    func recordAndRecognizeSpeech() {
-        let node = audioEngine.inputNode
-        //guard let node = audioEngine.inputNode else {return}
+    func initAudioStuff() {
+        if self.audioInited {
+            return
+        }
         
+        let node = audioEngine.inputNode
         let recordingFormat = node.outputFormat(forBus: 0)
         
         node.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat)
@@ -42,17 +45,43 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
             return print(error)
         }
         
+        self.audioInited = true
+    }
+    
+    func recordAndRecognizeSpeech() {
+        self.initAudioStuff()
+        
         guard let myRecognizer = SFSpeechRecognizer() else {
             return
         }
         if !myRecognizer.isAvailable {
             return
         }
-        
-        recognitionTask = speechRecognizer?.recognitionTask(with: request, resultHandler: { result, error in
+
+        self.recognitionTask = speechRecognizer?.recognitionTask(with: request, resultHandler: { result, error in
 
             if let result = result {
-                print(translate(result.bestTranscription.formattedString))
+                print(result.isFinal)
+                let tokens = tokenize(result.bestTranscription.formattedString)
+                
+                if tokens.isEmpty {
+                    return
+                }
+                
+                switch (tokens.last!.type) {
+                case TokenType.MetaNext:
+                    print(tokens)
+                    print("(next)")
+                    self.recognitionTask?.finish()
+                    break
+                case TokenType.MetaDone:
+                    print(tokens)
+                    print("(done)")
+                    self.recognitionTask?.finish()
+                    break
+                default:
+                    break
+                }
                 
             } else if let error = error {
                 print("error:", error)
