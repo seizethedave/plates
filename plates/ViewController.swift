@@ -56,6 +56,7 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         if self.audioInited {
             return
         }
+        self.audioInited = true
         
         let node = audioEngine.inputNode
         let recordingFormat = node.outputFormat(forBus: 0)
@@ -63,8 +64,9 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         node.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat)
         {
             buffer, _ in
-            guard let req = self.request else { return }
-            req.append(buffer)
+            if let req = self.request {
+                req.append(buffer)
+            }
         }
         
         audioEngine.prepare()
@@ -73,8 +75,6 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         } catch {
             return print(error)
         }
-        
-        self.audioInited = true
     }
     
     func displayTokens(_ tokens: [Token]) {
