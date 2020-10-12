@@ -40,6 +40,18 @@ enum CommandTerminator {
 struct Plate : Equatable {
     var plateNumber: String
     var state: String?
+    
+    func speakableString() -> String {
+        var s = ""
+        for c in self.plateNumber {
+            if c.isLetter {
+                s += "\(c)."
+            } else {
+                s += "\(c) "
+            }
+        }
+        return s
+    }
 }
 
 struct PlateCommand : Equatable {
@@ -82,16 +94,16 @@ let nato = [
     "zulu": "z",
 ]
 let numeric = [
-    "zero": "0",
+    "zero": "0", "oh": "0",
     "one": "1",
-    "two": "2",
+    "to": "2", "two": "2", "too": "2",
     "three": "3",
     "four": "4",
     "five": "5",
-    "six": "6",
+    "six": "6", "sex": "6",
     "seven": "7",
     "eight": "8",
-    "nine": "9",
+    "nine": "9", "niner": "9",
 ]
 
 

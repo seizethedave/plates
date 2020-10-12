@@ -19,11 +19,6 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
     }
-
-    @IBAction func plateAdded(_ sender: UITextField) {
-        print(sender.text!)
-        sender.text = ""
-    }
     
     @IBOutlet weak var plateLabel: UILabel!
     @IBOutlet weak var speakButton: UIButton!
@@ -32,6 +27,8 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
     var request : SFSpeechAudioBufferRecognitionRequest? = nil
     var recognitionTask: SFSpeechRecognitionTask?
     var audioInited = false
+    
+    let synth = AVSpeechSynthesizer()
     
     var commandBuf = [PlateCommand]()
     var listenTimer : Timer?
@@ -65,7 +62,14 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         let cmds = self.commandBuf
         
         if let c = self.chooseBestCommand(cmds) {
-            print("BEST:", c.plate!.plateNumber)
+            let plate = c.plate!.plateNumber
+            print("BEST:", plate)
+            
+            let speechUtterance = AVSpeechUtterance(string: c.plate!.speakableString())
+            speechUtterance.rate = AVSpeechUtteranceMaximumSpeechRate / 1.5
+            speechUtterance.voice = AVSpeechSynthesisVoice(identifier: AVSpeechSynthesisVoiceIdentifierAlex)
+            self.synth.speak(speechUtterance)
+            
         } else {
             print("NO BEST")
         }
