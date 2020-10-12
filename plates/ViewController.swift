@@ -11,6 +11,7 @@ import Speech
 enum ViewState {
     case NotListening
     case Listening
+    case FinishingListen
 }
 
 class ViewController: UIViewController, SFSpeechRecognizerDelegate {
@@ -32,6 +33,10 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
     var recognitionTask: SFSpeechRecognitionTask?
     var audioInited = false
     
+    var commandBuf = [PlateCommand]()
+    var listenTimer : Timer?
+    var willRecordAgain = false
+    
     var viewState = ViewState.NotListening {
         didSet {
             if (self.viewState == oldValue) {
@@ -42,16 +47,45 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
                 case ViewState.Listening:
                     self.speakButton.isSelected = true
                     self.recordAndRecognizeSpeech()
-                    break
                 case ViewState.NotListening:
                     self.speakButton.isSelected = false
                     self.stopListening()
-                    break
+                case ViewState.FinishingListen:
+                    self.listenTimer = Timer.scheduledTimer(
+                        timeInterval: 0.1, target: self, selector: #selector(self.timerFired), userInfo:nil, repeats: false)
                 }
             }
         }
     }
     
+    @objc
+    func timerFired() {
+        print("TIMER FIRED")
+        print(self.commandBuf)
+        let cmds = self.commandBuf
+        
+        if let c = self.chooseBestCommand(cmds) {
+            print("BEST:", c.plate!.plateNumber)
+        } else {
+            print("NO BEST")
+        }
+        
+        self.commandBuf = []
+        self.listenTimer?.invalidate()
+        
+        if self.willRecordAgain {
+            self.viewState = ViewState.Listening
+        } else {
+            self.viewState = ViewState.NotListening
+        }
+    }
+    
+    func chooseBestCommand(_ commands: [PlateCommand]) -> PlateCommand? {
+        commands.max { a, b in
+            a.plate!.plateNumber.count < b.plate!.plateNumber.count
+        }
+    }
+
     func initAudioStuff() {
         if self.audioInited {
             return
@@ -77,39 +111,38 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
         }
     }
     
-    func displayTokens(_ tokens: [Token]) {
-        assert(tokens.last!.type == TokenType.MetaDone || tokens.last!.type == TokenType.MetaNext)
-        
-        guard let plateToken = tokens.first(where: { $0.type == TokenType.PlateNumber }) else {
-            print("malformed tokens", tokens)
-            return
+    func addCommand(_ command: PlateCommand) {
+        if command.isComplete() {
+            self.commandBuf.append(command)
         }
-        
-        plateLabel.text = plateToken.value
     }
-    
+
     func gotTaskResult(_ result: SFSpeechRecognitionResult?, _ error: Error?) {
-        
         if let result = result {
-            print(result.isFinal)
             let tokens = tokenize(result.bestTranscription.formattedString)
-            
-            if tokens.isEmpty {
-                return
-            }
-            
-            switch (tokens.last!.type) {
-            case TokenType.MetaNext:
-                displayTokens(tokens)
+            let command = parseCommand(tokens)
+
+            addCommand(command)
+            plateLabel.text = command.plate?.plateNumber
+
+            switch command.terminator {
+            case CommandTerminator.Incomplete:
+                break
+                
+            case CommandTerminator.Discard:
+                plateLabel.text = "-"
+                self.commandBuf = []
+                self.willRecordAgain = true
                 self.viewState = ViewState.NotListening
                 self.viewState = ViewState.Listening
-                break
-            case TokenType.MetaDone:
-                displayTokens(tokens)
-                self.viewState = ViewState.NotListening
-                break
-            default:
-                break
+
+            case CommandTerminator.Next:
+                self.willRecordAgain = true
+                self.viewState = ViewState.FinishingListen
+                
+            case CommandTerminator.Done:
+                self.willRecordAgain = false
+                self.viewState = ViewState.FinishingListen
             }
         } else if let error = error {
             print("error:", error)

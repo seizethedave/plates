@@ -46,11 +46,16 @@ struct PlateCommand : Equatable {
     var commandType: CommandType
     var plate: Plate?
     var terminator: CommandTerminator
+    
+    func isComplete() -> Bool {
+        return self.terminator == CommandTerminator.Done
+            || self.terminator == CommandTerminator.Next
+    }
 }
 
 let nato = [
     "alpha": "a",
-    "beta": "b",
+    "bravo": "b",
     "charlie": "c",
     "delta": "d",
     "echo": "e",
@@ -145,7 +150,7 @@ func tokenize(_ input: String) -> [Token] {
     return tokens
 }
 
-func parseCommand(_ tokens: [Token]) -> PlateCommand? {
+func parseCommand(_ tokens: [Token]) -> PlateCommand {
     var commandType = CommandType.Add
     var plate : Plate? = nil
     var terminator = CommandTerminator.Incomplete
@@ -180,16 +185,16 @@ func parseCommand(_ tokens: [Token]) -> PlateCommand? {
         )
     }
     
-    if let ret = next() {
-        return ret
+    if let earlyReturn = next() {
+        return earlyReturn
     }
     
     if t!.type == TokenType.MetaAdd || t!.type == TokenType.MetaCorrection {
         // It's a command type.
         commandType = t!.type == TokenType.MetaAdd ? CommandType.Add : CommandType.Correction
         
-        if let ret = next() {
-            return ret
+        if let earlyReturn = next() {
+            return earlyReturn
         }
     }
     
@@ -200,20 +205,19 @@ func parseCommand(_ tokens: [Token]) -> PlateCommand? {
     var state: String? = nil
     plate = Plate(plateNumber: plateNumber, state: state)
     
-    if let ret = next() {
-        return ret
+    if let earlyReturn = next() {
+        return earlyReturn
     }
     
     if t!.type == TokenType.State {
         state = t!.value
         plate = Plate(plateNumber: plateNumber, state: state)
         
-        if let ret = next() {
-            return ret
+        if let earlyReturn = next() {
+            return earlyReturn
         }
     }
     
     terminator = t!.type == TokenType.MetaDone ? CommandTerminator.Done : CommandTerminator.Next
     return PlateCommand(commandType: commandType, plate: plate, terminator: terminator)
 }
-

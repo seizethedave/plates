@@ -11,7 +11,7 @@ import XCTest
 
 class platesTests: XCTestCase {
     func testTokenize() {
-        XCTAssertEqual(tokenize("alpha beta 1 2 3"),
+        XCTAssertEqual(tokenize("alpha bravo 1 2 3"),
                        [Token(type: TokenType.PlateNumber, value: "ab123")])
 
         XCTAssertEqual(
