@@ -37,6 +37,33 @@ class platesTests: XCTestCase {
             ])
     }
     
+    func testTokenizeDiscard() {
+        XCTAssertEqual(
+            tokenize("discard"),
+            [
+                Token(type: TokenType.MetaDiscard),
+            ])
+        XCTAssertEqual(
+            tokenize("alpha 1 2 discard"),
+            [
+                Token(type: TokenType.PlateNumber, value: "a12"),
+                Token(type: TokenType.MetaDiscard),
+            ])
+        XCTAssertEqual(
+            tokenize("alpha 1 2 state discard"),
+            [
+                Token(type: TokenType.PlateNumber, value: "a12"),
+                Token(type: TokenType.MetaDiscard),
+            ])
+        XCTAssertEqual(
+            tokenize("alpha 1 2 state washington discard"),
+            [
+                Token(type: TokenType.PlateNumber, value: "a12"),
+                Token(type: TokenType.State, value: "washington"),
+                Token(type: TokenType.MetaDiscard),
+            ])
+    }
+    
     func testParse() {
         XCTAssertEqual(
             parseCommand(
@@ -92,8 +119,41 @@ class platesTests: XCTestCase {
     
     /// Test "discarding" of commands.
     func testParseCommandDiscard() {
+        XCTAssertEqual(
+            parseCommand(
+                [
+                    Token(type: TokenType.MetaDiscard),
+                ]
+            ),
+            PlateCommand(commandType: CommandType.Add,
+                         plate: nil,
+                         terminator: CommandTerminator.Discard)
+        )
         
+        XCTAssertEqual(
+            parseCommand(
+                [
+                    Token(type: TokenType.PlateNumber, value: "a"),
+                    Token(type: TokenType.MetaDiscard),
+                ]
+            ),
+            PlateCommand(commandType: CommandType.Add,
+                         plate: Plate(plateNumber: "a", state: nil),
+                         terminator: CommandTerminator.Discard)
+        )
         
+        XCTAssertEqual(
+            parseCommand(
+                [
+                    Token(type: TokenType.PlateNumber, value: "a12"),
+                    Token(type: TokenType.State, value: "washington"),
+                    Token(type: TokenType.MetaDiscard),
+                ]
+            ),
+            PlateCommand(commandType: CommandType.Add,
+                         plate: Plate(plateNumber: "a12", state: "washington"),
+                         terminator: CommandTerminator.Discard)
+        )
     }
     
     /// Test partial (not-yet-terminated) commands.

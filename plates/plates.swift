@@ -17,6 +17,7 @@ enum TokenType {
     case MetaCorrection
     case MetaNext
     case MetaDone
+    case MetaDiscard
 }
 
 struct Token : Equatable {
@@ -33,6 +34,7 @@ enum CommandTerminator {
     case Done
     case Next
     case Incomplete
+    case Discard
 }
 
 struct Plate : Equatable {
@@ -107,7 +109,11 @@ func tokenize(_ input: String) -> [Token] {
     }
 
     for atom in input.lowercased().split(separator: " ") {
-        if expectState {
+        if atom == "discard" {
+            flushPlate()
+            tokens.append(Token(type: TokenType.MetaDiscard))
+            break
+        } else if expectState {
             tokens.append(Token(type: TokenType.State, value: String(atom)))
             expectState = false
         } else if atom == "done" {
@@ -144,6 +150,28 @@ func parseCommand(_ tokens: [Token]) -> PlateCommand? {
     var plate : Plate? = nil
     var terminator = CommandTerminator.Incomplete
     
+    var it = tokens.makeIterator()
+    var t: Token? = nil
+    
+    func next() -> PlateCommand? {
+        // Advance t, return a bail command if exhausted, or if we get a Discard.
+        t = it.next()
+        if t == nil {
+            return PlateCommand(
+                commandType: commandType,
+                plate: plate,
+                terminator: terminator
+            )
+        } else if t!.type == TokenType.MetaDiscard {
+            return PlateCommand(
+                commandType: commandType,
+                plate: plate,
+                terminator: CommandTerminator.Discard
+            )
+        }
+        return nil
+    }
+    
     if tokens.isEmpty {
         return PlateCommand(
             commandType: commandType,
@@ -152,65 +180,40 @@ func parseCommand(_ tokens: [Token]) -> PlateCommand? {
         )
     }
     
-    var it = tokens.makeIterator()
-    var t = it.next()
-    if t == nil {
-        return PlateCommand(
-            commandType: commandType,
-            plate: plate,
-            terminator: terminator
-        )
+    if let ret = next() {
+        return ret
     }
-    var tok = t!
     
-    if tok.type == TokenType.MetaAdd || tok.type == TokenType.MetaCorrection {
+    if t!.type == TokenType.MetaAdd || t!.type == TokenType.MetaCorrection {
         // It's a command type.
-        commandType = tok.type == TokenType.MetaAdd ? CommandType.Add : CommandType.Correction
+        commandType = t!.type == TokenType.MetaAdd ? CommandType.Add : CommandType.Correction
         
-        t = it.next()
-        if t == nil {
-            return PlateCommand(
-                commandType: commandType,
-                plate: plate,
-                terminator: terminator
-            )
+        if let ret = next() {
+            return ret
         }
-        tok = t!
     }
     
     // Next one is the plate number.
     
-    assert(tok.type == TokenType.PlateNumber)
-    let plateNumber = tok.value!
+    assert(t!.type == TokenType.PlateNumber)
+    let plateNumber = t!.value!
     var state: String? = nil
     plate = Plate(plateNumber: plateNumber, state: state)
     
-    t = it.next()
-    if t == nil {
-        return PlateCommand(
-            commandType: commandType,
-            plate: plate,
-            terminator: terminator
-        )
+    if let ret = next() {
+        return ret
     }
-    tok = t!
     
-    if tok.type == TokenType.State {
-        state = tok.value
+    if t!.type == TokenType.State {
+        state = t!.value
         plate = Plate(plateNumber: plateNumber, state: state)
         
-        t = it.next()
-        if t == nil {
-            return PlateCommand(
-                commandType: commandType,
-                plate: plate,
-                terminator: terminator
-            )
+        if let ret = next() {
+            return ret
         }
-        tok = t!
     }
     
-    terminator = tok.type == TokenType.MetaDone ? CommandTerminator.Done : CommandTerminator.Next
+    terminator = t!.type == TokenType.MetaDone ? CommandTerminator.Done : CommandTerminator.Next
     return PlateCommand(commandType: commandType, plate: plate, terminator: terminator)
 }
 
