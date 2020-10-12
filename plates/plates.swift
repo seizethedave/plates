@@ -7,6 +7,8 @@
 
 import Foundation
 
+
+
 enum TokenType {
     case PlateNumber
     case State
@@ -17,34 +19,80 @@ enum TokenType {
     case MetaDone
 }
 
-
-
 struct Token : Equatable {
     var type: TokenType
     var value: String?
 }
 
-struct Command {
-    var plate: String
+enum CommandType {
+    case Add
+    case Correction
 }
 
-/*
- Grammar:
- [Command] Atom* [State] [Terminator]
- ->
- [
- Command(CommandType, Atom*, State),
- Command(CommandType, Atom*, State),
- ...
- ]
-*/
+enum CommandTerminator {
+    case Done
+    case Next
+    case Incomplete
+}
+
+struct Plate : Equatable {
+    var plateNumber: String
+    var state: String?
+}
+
+struct PlateCommand : Equatable {
+    var commandType: CommandType
+    var plate: Plate?
+    var terminator: CommandTerminator
+}
+
+let nato = [
+    "alpha": "a",
+    "beta": "b",
+    "charlie": "c",
+    "delta": "d",
+    "echo": "e",
+    "foxtrot": "f",
+    "golf": "g",
+    "hotel": "h",
+    "india": "i",
+    "juliet": "j",
+    "kilo": "k",
+    "lima": "l",
+    "mike": "m",
+    "november": "n",
+    "oscar": "o",
+    "papa": "p",
+    "quebec": "q",
+    "romeo": "r",
+    "sierra": "s",
+    "tango": "t",
+    "uniform": "u",
+    "victor": "v",
+    "whiskey": "w",
+    "x-ray": "x",
+    "yankee": "y",
+    "zulu": "z",
+]
+let numeric = [
+    "zero": "0",
+    "one": "1",
+    "two": "2",
+    "three": "3",
+    "four": "4",
+    "five": "5",
+    "six": "6",
+    "seven": "7",
+    "eight": "8",
+    "nine": "9",
+]
+
 
 /*
  input:
  alpha beta 1 2 3
  output:
- [
- ]
+ [Token("ab123"), ...]
  */
 func tokenize(_ input: String) -> [Token] {
     var tokens = [Token]()
@@ -91,43 +139,78 @@ func tokenize(_ input: String) -> [Token] {
     return tokens
 }
 
-let nato = [
-    "alpha": "a",
-    "beta": "b",
-    "charlie": "c",
-    "delta": "d",
-    "echo": "e",
-    "foxtrot": "f",
-    "golf": "g",
-    "hotel": "h",
-    "india": "i",
-    "juliet": "j",
-    "kilo": "k",
-    "lima": "l",
-    "mike": "m",
-    "november": "n",
-    "oscar": "o",
-    "papa": "p",
-    "quebec": "q",
-    "romeo": "r",
-    "sierra": "s",
-    "tango": "t",
-    "uniform": "u",
-    "victor": "v",
-    "whiskey": "w",
-    "x-ray": "x",
-    "yankee": "y",
-    "zulu": "z",
-]
-let numeric = [
-    "zero": "0",
-    "one": "1",
-    "two": "2",
-    "three": "3",
-    "four": "4",
-    "five": "5",
-    "six": "6",
-    "seven": "7",
-    "eight": "8",
-    "nine": "9",
-]
+func parseCommand(_ tokens: [Token]) -> PlateCommand? {
+    var commandType = CommandType.Add
+    var plate : Plate? = nil
+    var terminator = CommandTerminator.Incomplete
+    
+    if tokens.isEmpty {
+        return PlateCommand(
+            commandType: commandType,
+            plate: plate,
+            terminator: terminator
+        )
+    }
+    
+    var it = tokens.makeIterator()
+    var t = it.next()
+    if t == nil {
+        return PlateCommand(
+            commandType: commandType,
+            plate: plate,
+            terminator: terminator
+        )
+    }
+    var tok = t!
+    
+    if tok.type == TokenType.MetaAdd || tok.type == TokenType.MetaCorrection {
+        // It's a command type.
+        commandType = tok.type == TokenType.MetaAdd ? CommandType.Add : CommandType.Correction
+        
+        t = it.next()
+        if t == nil {
+            return PlateCommand(
+                commandType: commandType,
+                plate: plate,
+                terminator: terminator
+            )
+        }
+        tok = t!
+    }
+    
+    // Next one is the plate number.
+    
+    assert(tok.type == TokenType.PlateNumber)
+    let plateNumber = tok.value!
+    var state: String? = nil
+    plate = Plate(plateNumber: plateNumber, state: state)
+    
+    t = it.next()
+    if t == nil {
+        return PlateCommand(
+            commandType: commandType,
+            plate: plate,
+            terminator: terminator
+        )
+    }
+    tok = t!
+    
+    if tok.type == TokenType.State {
+        state = tok.value
+        plate = Plate(plateNumber: plateNumber, state: state)
+        
+        t = it.next()
+        if t == nil {
+            return PlateCommand(
+                commandType: commandType,
+                plate: plate,
+                terminator: terminator
+            )
+        }
+        tok = t!
+    }
+    
+    terminator = tok.type == TokenType.MetaDone ? CommandTerminator.Done : CommandTerminator.Next
+    return PlateCommand(commandType: commandType, plate: plate, terminator: terminator)
+}
+
