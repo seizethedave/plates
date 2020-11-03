@@ -48,6 +48,7 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
                     self.speakButton.isSelected = false
                     self.stopListening()
                 case ViewState.FinishingListen:
+                    // Wait a short time for more samples to register, then call timerFired.
                     self.listenTimer = Timer.scheduledTimer(
                         timeInterval: 0.1, target: self, selector: #selector(self.timerFired), userInfo:nil, repeats: false)
                 }

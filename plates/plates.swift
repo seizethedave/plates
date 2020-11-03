@@ -66,7 +66,7 @@ struct PlateCommand : Equatable {
 }
 
 let nato = [
-    "alpha": "a",
+    "alpha": "a", "alfa": "a",
     "bravo": "b",
     "charlie": "c",
     "delta": "d",
@@ -117,7 +117,7 @@ func tokenize(_ input: String) -> [Token] {
     var tokens = [Token]()
     var plateBuf = ""
     var expectState = false
-    
+
     func flushPlate() {
         if !plateBuf.isEmpty {
             tokens.append(Token(type: TokenType.PlateNumber, value: plateBuf))
