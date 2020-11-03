@@ -125,7 +125,14 @@ class ViewController: UIViewController, SFSpeechRecognizerDelegate {
     func gotTaskResult(_ result: SFSpeechRecognitionResult?, _ error: Error?) {
         if let result = result {
             let tokens = tokenize(result.bestTranscription.formattedString)
-            let command = parseCommand(tokens)
+            guard let command = try? parseCommand(tokens) else {
+                plateLabel.text = "-"
+                self.commandBuf = []
+                self.willRecordAgain = true
+                self.viewState = ViewState.NotListening
+                self.viewState = ViewState.Listening
+                return
+            }
 
             addCommand(command)
             plateLabel.text = command.plate?.plateNumber

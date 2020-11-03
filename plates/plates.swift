@@ -156,13 +156,17 @@ func tokenize(_ input: String) -> [Token] {
         }
     }
 
-    // dangling plate at end of input without terminal token:
+    // in case of dangling plate at end of input without terminal token:
     flushPlate()
 
     return tokens
 }
 
-func parseCommand(_ tokens: [Token]) -> PlateCommand {
+enum ParseError : Error, Equatable {
+    case UnexpectedToken(type: TokenType)
+}
+
+func parseCommand(_ tokens: [Token]) throws -> PlateCommand {
     var commandType = CommandType.Add
     var plate : Plate? = nil
     var terminator = CommandTerminator.Incomplete
@@ -208,11 +212,11 @@ func parseCommand(_ tokens: [Token]) -> PlateCommand {
         if let earlyReturn = next() {
             return earlyReturn
         }
+    } else if t!.type != TokenType.PlateNumber {
+        // Expect a plate number.
+        throw ParseError.UnexpectedToken(type: t!.type)
     }
     
-    // Next one is the plate number.
-    
-    assert(t!.type == TokenType.PlateNumber)
     let plateNumber = t!.value!
     var state: String? = nil
     plate = Plate(plateNumber: plateNumber, state: state)
